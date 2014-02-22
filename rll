@@ -1,0 +1,472 @@
+#! /usr/bin/perl -w
+
+#! /usr/local/bin/perl -w
+# rll :    Time-stamp: <2012-01-15 19:38:24>
+
+# Gui front end for rl to make xterms of different colors.
+
+use strict;
+use Tk;
+require Tk::BrowseEntry;
+
+# TODO:
+# - This is getting large.  Maybe tabs would make it smaller.
+# - Add some features from kcoloredit rather than trying to display 
+#   all combinations of foreground and background colors.
+# - Have a preview panel.
+
+# NYI - To avoid requirement for rl script finish sub start_xterm
+# NYI - list of hostnames should be kept in file ~/.rll_remote_hosts
+#       - adding new hostnames should automatically update the file.
+# NYI 06/06/02 - Partially implemented:
+#                Pressing "a" should select the first button "t1_perl",
+#                pressing "c" should select the third button "t3_perl",
+#                etc.  See btl for details.  Needs work on the bind.
+
+# -----=====-----=====-----=====-----=====-----=====-----=====-----=====
+# Subs:
+#    restart
+#    mk_xterm
+#    start_xterm
+#    mk_button
+#    mk_label
+#    mk_run
+#    mk_colors1
+#    mk_colors2
+#    mk_colors3
+
+# note: "*cr" colors from costa rica
+
+
+# globals (start)
+my $myname = '/usr/home/roland/bin/rll';
+#my $rl_prog = '/usr/home/roland/bin/rl';
+my $rl_prog = 'rl';
+my $window_bg_color = 'aquamarine4';  # same as my wmx background color.
+my $ssh_flag = 0;
+my $remote_host_flag = 0;
+my $hostname = '';
+my @hostnames = qw(gold garnet ottvob01 rjrl1 rjrl2 rjrlap1 rjrlap2 rjrh1 
+		   tripe.e-smith.com tux.oclug.on.ca enzo1 limh1);
+my $size_flag = 0;
+my $size = '80x39';
+my @sizes = qw(40x7 80x24 80x39 80x44);
+
+my $override_fg_color_flag = 0;
+my $override_fg_color = 'none';
+my @override_fg_colors = qw(none black white brown red orange yellow lightseagreen seagreen limegreen blue darkblue violet purple);
+
+my $MW = MainWindow->new;
+$MW->geometry('+60+3');
+$MW->title('Xterm color selector');
+
+my $t = $MW->Frame(-bg => $window_bg_color);
+$t->pack(-expand=>1, -fill=>'both', -anchor=>'e');
+
+# These only work with the real control key, not the caps lock key.  :-(
+$t->bind('all', '<Control-c>' => sub{$t->destroy});
+$t->bind('all', '<Control-d>' => sub{$t->destroy});
+$t->bind('all', '<Control-z>' => sub{$MW->iconify});
+# Hack
+$t->bind('all', 'q' => sub{$MW->destroy});
+$t->bind('all', 'i' => sub{$MW->iconify});
+$t->bind('all', '<Alt-r>' => sub{restart()});
+
+# button labels (aka btl)
+my @btl = 'a' .. 'g';    # populate array with letters
+
+my $btl_idx = 0;
+#my @btl_tag;
+# globals (end)
+
+sub restart {
+    # restart the application
+    system("$myname &");
+    exit;
+} # end restart
+
+
+sub mk_xterm {
+    # usage: mk_xterm($bg_color)
+    # usage: mk_xterm($bg_color, $label)
+    # usage: mk_xterm($bg_color, $label, $fg_color)
+    my $bg_color = shift;
+
+    my $label;
+    if ($#_ gt -1) {
+	$label = shift;
+    } else {
+	$label = $bg_color;
+    }
+
+    my $fg_color;
+    if ($#_ gt -1) {
+	$fg_color = shift;
+    } else {
+	$fg_color = 'black';
+    }
+
+    if ($override_fg_color_flag) {
+	if (!($override_fg_color =~ /^none$/)) {
+	    $fg_color = $override_fg_color;
+	}
+    }
+
+    # if color is specified like #fe2cffff7df3, add a leading backslash '\'
+    $bg_color =~ s/^#/\\#/;
+
+    my $options = '';
+    if ($size_flag) {
+	$options .= ' -siz';
+	$options .= ' ' . $size;
+    }
+    if ($remote_host_flag) {
+	if ($ssh_flag) {
+	    $options .= ' -s';
+	}
+	$options .= " $hostname ";
+    }
+    my $cmd = $rl_prog . ' -fg ' . $fg_color . ' -bg ' . $bg_color . ' -n ' . $label . $options . ' &';
+    print("cmd is :\n$cmd\n");
+    system($cmd);
+
+# NYI - To avoid requirement for rl script
+# print("start_xterm \"$bg_color\" \"$label\" \"$ssh_flag\" \"$hostname\"\n");
+#    start_xterm($bg_color, $label, $ssh_flag, $hostname);
+
+} # end mk_xterm
+
+
+sub start_xterm {
+    # usage: start_xterm($color, $label, $ssh_flag, $hostname)
+    my $color = shift;
+    my $label = shift;
+    my $ssh_flag = shift;
+    my $hostname = shift;
+
+    my $pointer_color = 'blue';
+    my $font = '';
+    my $position = '#+290+15';
+    my $cmd;
+    my $rlogin = 'rlogin';
+    my $user = '';
+    my $size = '80x44';
+
+    if ($ssh_flag) {
+	$rlogin = 'ssh';
+    }
+
+    $cmd = "xterm +sb -sf  $font ";
+    $cmd .= " -s -ut -ms $pointer_color";
+    $cmd .= " -bg $color";
+    $cmd .= " -geometry $size+0-0 $position ";
+
+    if ($hostname) {
+	$cmd .= "-e $rlogin $user $hostname";
+    }
+    $cmd .= " &";
+    print("cmd is : \"$cmd\"\n");
+
+# # echo "local"
+#      xterm +sb -sf  $font   -s -ut -ms $pointer_color -bg $color -geometry \
+#  	    ${size}+0-0 '#+290+15'  -n $iconname &
+# # echo "remote"
+#      xterm +sb -sf  $font   -s -ut -ms $pointer_color -bg $color -geometry \
+#  	    ${size}+0-0 '#+290+15'  -n $iconname -e $RLOGIN $USER $host &
+
+    system($cmd);
+} # end start_xterm
+
+
+sub mk_button {
+    # usage: mk_button($win, $bg_color)
+    # usage: mk_button($win, $bg_color, $label)
+    # usage: mk_button($win, $bg_color, $label, $fg_color)
+    my $win = shift;
+    my $bg_color = shift;
+
+    my $label;
+    if ($#_ gt -1) {
+	$label = shift;
+    } else {
+	$label = $bg_color;
+    }
+
+    my $fg_color;
+    if ($#_ gt -1) {
+	$fg_color = shift;
+    } else {
+	$fg_color = 'black';
+    }
+
+    my $btl;
+    if (defined($btl[$btl_idx])) {
+	$btl = $btl[$btl_idx++];
+    } else {
+	$btl = '';
+    }
+
+    my $tag = $win->Button(-text => $btl . '  ' . $bg_color . '  ' . $label,
+	       -fg => $fg_color,
+	       -bg => $bg_color,
+	       -command => sub{mk_xterm($bg_color, $label, $fg_color)}
+	       );
+    $tag->pack || print("error making button\n");
+#    $t->bind('all', $btl => sub{mk_xterm($bg_color, $label, $fg_color)});
+
+} # end mk_button
+
+
+sub mk_label {
+    my $win = shift;
+    my $color = 'lightgrey';
+    my $label = shift;
+
+    $win->Label(-text => "$label",
+		-bg => $color,
+		)->pack(-expand=>1, -fill=>'both', -anchor=>'e');
+} # end mk_label
+
+
+sub mk_run {
+    my $t = shift;
+    mk_label($t, "perl");
+    mk_button($t, "PaleGoldenrod", "t1_perl");
+    mk_button($t, "khaki", "t1_perl2");
+    mk_button($t, "lightGoldenrod", "t1_perl3");
+    mk_label($t, "remedy");
+    mk_button($t, "\#ffffd7ce8dd2" , "t1_remedy_1");
+    mk_button($t, "greenyellow", "t1_remedy_2");
+    mk_button($t, "olivedrab1", "t1_remedy_3");
+    mk_label($t, "ccase");
+    mk_button($t, "\#fe2cffff7df3", "t1_ccase1");
+    mk_button($t, "\#fd91ffff52af", "t1_ccase2");
+    mk_label($t, "root");
+    mk_button($t, "pink", "t1_root");
+#    mk_label($t, "green");
+#    mk_button($t, "PaleGreen" , "t3_PaleGreen");
+#    mk_button($t, "MediumSpringGreen", "t1_msg");
+#    mk_label($t, "terms");
+#    mk_button($t, "thistle1", "t3");
+#    mk_button($t, "thistle2", "t4");
+    mk_label($t, "white foreground");
+    mk_button($t, "sandybrown", "sandybrown", 'white');    # f4a460
+    mk_button($t, "goldenrod", "goldenrod", 'white');      # daa520
+    mk_button($t, "\#c40083000000", "orange_brown", 'white');        # c48300
+    mk_button($t, "gold4", "gold4", 'white');              # 8b7600
+    mk_button($t, "coral", "coral", 'white');              # ??
+    mk_button($t, "palevioletred" , "palevioletred", 'white');   # db7093
+    mk_button($t, "\#78006000d000", "violetblue1", 'white'); # 7860d0
+    mk_button($t, "\#60005000b100", "violetblue2", 'white'); # 6050b1
+    mk_button($t, "\#4c002c00be00", "violetblue3", 'white'); # 4c2cbe
+    mk_button($t, "\#3a006e00a500", "blue", 'white');  # 3a6ea5 (windows bg)
+    mk_button($t, "darkblue", "darkblue", 'white');              # 000000??
+    mk_button($t, "black", "black", 'white');              # 000000
+    mk_button($t, "DarkTurquoise", "DarkTurquoise", 'white');     # 000000??
+    mk_button($t, "DeepSkyBlue2" , "t3_DeepSkyBlue2", 'white');	  # 00b2ee
+    mk_button($t, "LightSeaGreen" , "t3_LightSeaGreen", 'white'); # 20b2ab
+    mk_label($t, "other black");
+    mk_button($t, "grey40", "grey40_yellow", 'yellow');            # 000000??
+    mk_button($t, "black", "black_yellow", 'yellow');              # 000000??
+    mk_button($t, "black", "black_orange", 'orange');              # 000000??
+    mk_button($t, "black", "black_green", 'green');              # 000000??
+    mk_button($t, "black", "black_blue", 'blue');              # 000000??
+    mk_label($t, "other");
+    mk_button($t, "wheat", "wheat_brown", 'brown');              # 000000??
+} # end mk_run
+
+
+sub mk_colors1 {
+    my $t = shift; 
+    mk_label($t, "gold");
+    mk_button($t, "gold1" , "t3_gold1");  # ffd900
+    mk_button($t, "gold2" , "t3_gold2");  # eeca00
+    mk_button($t, "gold3" , "t3_gold3");  # cdae00
+    mk_button($t, "goldenrod");           # daa520
+    mk_label($t, "yellow");
+    mk_button($t, "yellow" , "t3_yellow");           # ffff00
+    mk_button($t, "\#ffffcc" , "t3_yellow0");	     # ffffcc
+    mk_button($t, "\#ffd5ffffafde" , "t3_yellow1");  # ffffaf
+    mk_button($t, "\#ffccffff9d70" , "t3_yellow2");  # ffff9d
+    mk_button($t, "\#ffc7ffff92f1" , "t3_yellow3");  # ffff92
+    mk_button($t, "\#ff00f3009900" , "t3_yellow3a");  # fff399  *cr
+    mk_button($t, "\#fe2cffff7df3" , "t3_yellow4");  # feff7d
+    mk_button($t, "\#ffc1ffff8872" , "t3_yellow5");  # ffff88
+    mk_button($t, "\#fd91ffff52af" , "t3_yellow6");  # fdff52
+    mk_button($t, "\#ff92ffff2c8b" , "t3_yellow7");  # ffff2c
+    mk_button($t, "\#f502f5800000" , "t3_yellow8");  # f5f500
+    mk_button($t, "\#efe3f01f79fb" , "t3_yellow9");  # eff079
+    mk_label($t, "orange");
+    mk_button($t, "\#ffffe622b686" , "t3_orange1");  # ffe6b6
+    mk_button($t, "\#ffffdebea188" , "t3_orange2");  # ffdea1
+    mk_button($t, "\#ffffd7ce8dd2" , "t3_orange3");  # ffd78d
+    mk_button($t, "\#ffffcb486a3d" , "t3_orange4");  # ffcb6a
+    mk_button($t, "\#ff00b3006600" , "t3_orange5");  # ffb366  *cr
+    mk_button($t, "\#ffffb6032dd2" , "t3_orange6");  # ffb62d
+    mk_button($t, "\#ff0092005f00" , "t3_orange7");  # ff925f  *cr
+    mk_button($t, "\#de0080006300" , "t3_orange8");  # de8063  *cr
+    mk_label($t, "yellow_orange");
+    mk_button($t, "\#ffffef08ac07" , "t3_yellow_orange1");  # ffefac
+    mk_button($t, "\#ffffe6d08353" , "t3_yellow_orange2");  # ffe683
+    mk_button($t, "\#ffffdb624ac0" , "t3_yellow_orange3");  # ffdb4a
+    mk_label($t, "common");
+    mk_button($t, "AntiqueWhite" , "AntiqueWhite");
+    mk_button($t, "AntiqueWhite2" , "AntiqueWhite2_for_xterm");
+    mk_button($t, "AntiqueWhite3" , "AntiqueWhite3");
+    mk_button($t, "ivory3", "ivory3_for_emacs");
+    mk_button($t, "\#dcd1ba", "for_web_page");
+} # end mk_colors1
+
+
+sub mk_colors2 {
+    my $t = shift; 
+    mk_label($t, "green");
+    mk_button($t, "honeydew2");                                    # e0eee0
+    mk_button($t, "DarkSeaGreen1" , "t3_DarkSeaGreen1");	   # c1ffc1
+    mk_button($t, "DarkSeaGreen2" , "t3_DarkSeaGreen2");	   # b4eeb4
+    mk_button($t, "PaleGreen" , "t3_PaleGreen");		   # 98fb98
+    mk_button($t, "LightGreen" , "t3_LightGreen");		   # 90ee90
+    mk_button($t, "MediumSpringGreen" , "t3_MediumSpringGreen");   # 00fa9a
+    mk_button($t, "SeaGreen2" , "t3_SeaGreen2");		   # 4eee94
+    mk_button($t, "SeaGreen3" , "t3_SeaGreen3");		   # 43cd81
+    mk_button($t, "LimeGreen" , "t3_LimeGreen");		   # 32cd32
+    mk_button($t, "LightSeaGreen" , "t3_LightSeaGreen");	   # 20b2ab
+    mk_label($t, "blue");
+    mk_button($t, "Aquamarine1" , "t3_Aquamarine1");           # 7fffd4
+    mk_button($t, "LightCyan1" , "t3_LightCyan1");	       # e0ffff
+    mk_button($t, "\#f0f0f0" , "t3_lightblue00");	       # f0f0f0
+    mk_button($t, "\#e459f561ffff" , "t3_lightblue0");	       # e4f5ff
+    mk_button($t, "\#bcece63dffff" , "t3_lightblue1");	       # bce6ff
+    mk_button($t, "LightSkyBlue1" , "t3_LightSkyBlue1");       # bce6ff
+    mk_button($t, "\#a849d884ec07" , "t3_lightblue2");	       # a8d8ec
+    mk_button($t, "SkyBlue1" , "t3_SkyBlue1");		       # 87cdff
+    mk_button($t, "\#7b00ae00f600" , "t4_SkyBlue2");           # 7baef6
+    mk_button($t, "DeepSkyBlue" , "t3_DeepSkyBlue");	       # 00bfff
+    mk_button($t, "DeepSkyBlue2" , "t3_DeepSkyBlue2");	       # 00b2ee
+    mk_button($t, "DarkTurquoise", "DarkTurquoise");    # 000000??
+    mk_button($t, "lightsteelblue" , "t3_lightsteelblue");     # b0c4de
+    mk_label($t, "violet");
+    mk_button($t, "mistyrose");                   # ffe4e1
+    mk_button($t, "Thistle1" , "t3_Thistle1");	  # ffe1ff
+    mk_button($t, "Thistle2" , "t3_Thistle2");	  # eed2ee
+    mk_button($t, "plum1" , "t3_plum1");	  # ffbbff
+    mk_button($t, "pink");			  # ffc0cb
+    mk_button($t, "\#ffaaaa", "pink_mod");        # ffaaaa
+    mk_button($t, "pink2");			  # eea9b8
+    mk_button($t, "plum2" , "t3_plum2");	  # eeaeee
+    mk_button($t, "orchid1" , "t3_orchid1");
+    mk_button($t, "violet");
+} # end mk_colors2
+
+
+sub mk_colors3 {
+    my $t = shift; 
+    mk_label($t, "misc");
+    mk_button($t, "red");                       # ff0000
+    mk_button($t, "orangered");                 # ff4500
+    mk_button($t, "tomato");                    # ff6347
+    mk_button($t, "\#ff8173", "tomato_light1"); # ff8173
+    mk_button($t, "darkorange");                # ff8c00
+    mk_button($t, "orange");                    # ffa500
+    mk_button($t, "yellow");                    # ffff00
+    mk_button($t, "white");
+    mk_button($t, "whitesmoke");
+    mk_button($t, "\#ededed", "whitesmoke2");   # ededed
+    mk_button($t, "\#ebebeb", "whitesmoke3");	# ebebeb
+    mk_button($t, "\#e7e7e7", "whitesmoke4");	# e7e7e7
+    mk_button($t, "green");
+    mk_button($t, "blue");
+    mk_button($t, "purple");
+    mk_button($t, "lightsalmon" , "t3_lightsalmon");
+    mk_button($t, "darksalmon" , "t3_darksalmon");
+    mk_button($t, "palevioletred" , "t3_palevioletred");   # db7093
+    mk_label($t, "others");
+    mk_button($t, "peachpuff1");
+    mk_button($t, "wheat");
+    mk_button($t, "wheat2");
+    mk_button($t, "peachpuff2");
+    mk_button($t, "BurlyWood");
+    mk_button($t, "Tan");
+    mk_button($t, "SandyBrown");
+    mk_button($t, "Sienna1");
+    mk_button($t, "Sienna2");
+    mk_button($t, "Coral");
+    mk_button($t, "Grey70");
+    mk_button($t, "ivory3");
+    mk_button($t, "Grey80");
+    mk_button($t, "Grey90");
+    mk_button($t, "lavender" , "t3_lavender");
+} # end mk_colors3
+
+
+my $top_win = $MW->Frame(-bg => $window_bg_color)->pack(-side => 'top');
+
+my $f1 = $MW->Frame(-bg => $window_bg_color)->pack(-side => 'left');
+my $f2 = $MW->Frame(-bg => $window_bg_color)->pack(-side => 'left');
+my $f3 = $MW->Frame(-bg => $window_bg_color)->pack(-side => 'left');
+my $f4 = $MW->Frame(-bg => $window_bg_color)->pack(-side => 'left');
+
+$top_win->Button(-text=>'exit', -command=>sub{exit()})->pack(-side => 'right');
+$top_win->Checkbutton(
+		      -text => 'ssh',
+		      -indicatoron  => 0,
+		      -variable     => \$ssh_flag,
+		      -selectcolor  => 'PaleGreen1',
+		      )->pack(-side => 'right');
+
+$top_win->BrowseEntry(
+#		      -label => 'remote hostname:',
+		      -textvariable => \$hostname,
+		      -options => \@hostnames,
+		      )->pack(-side => 'right');
+
+$top_win->Checkbutton(
+		      -text => 'remote host',
+		      -indicatoron  => 0,
+		      -variable     => \$remote_host_flag,
+		      -selectcolor  => 'PaleGreen1',
+		      )->pack(-side => 'right');
+
+
+$top_win->BrowseEntry(
+		      -textvariable => \$size,
+		      -options => \@sizes,
+		      -width => 8,
+		      )->pack(-side => 'right');
+
+$top_win->Checkbutton(
+		      -text => 'size',
+		      -indicatoron  => 0,
+		      -variable     => \$size_flag,
+		      -selectcolor  => 'PaleGreen1',
+		      )->pack(-side => 'right');
+
+
+$top_win->BrowseEntry(
+		      -textvariable => \$override_fg_color,
+		      -options => \@override_fg_colors,
+		      -width => 8,
+		      )->pack(-side => 'right');
+
+$top_win->Checkbutton(
+		      -text => 'fg_color',
+		      -indicatoron  => 0,
+		      -variable     => \$override_fg_color_flag,
+		      -selectcolor  => 'PaleGreen1',
+		      )->pack(-side => 'right');
+
+
+# $top_win->Button(-text=>'mk_run', -command=>sub{mk_run($f1)})->pack(-side => 'right');
+# $top_win->Button(-text=>'mk_colors3', -command=>sub{mk_colors3($f4)})->pack(-side => 'right');
+# $top_win->Button(-text=>'mk_colors2', -command=>sub{mk_colors2($f3)})->pack(-side => 'right');
+# $top_win->Button(-text=>'mk_colors1', -command=>sub{mk_colors1($f2)})->pack(-side => 'right');
+
+mk_run($f1);
+mk_colors1($f2);
+mk_colors2($f3);
+mk_colors3($f4);
+
+MainLoop();
+
+
+__END__
