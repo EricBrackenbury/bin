@@ -83,7 +83,8 @@ DEFAULT_BACKGROUND = "sand"
 DEFAULT_FONT       = "10x20"
 DEFAULT_GEOMETRY   = "80x39"
 
-def spawn_xterm(foreground=DEFAULT_FOREGROUND,
+def spawn_xterm(label,
+                foreground=DEFAULT_FOREGROUND,
                 background=DEFAULT_BACKGROUND,
                 geometry=DEFAULT_GEOMETRY,
                 font=DEFAULT_FONT):
@@ -96,7 +97,8 @@ def spawn_xterm(foreground=DEFAULT_FOREGROUND,
                                 "-fg", foreground,
                                 "-bg", background,
                                 "-geometry", geometry,
-                                "-fn", font]).start()
+                                "-fn", font,
+                                "-n", label]).start()
 
 root = Tk()
 root["bg"] = RLL_BG
@@ -148,9 +150,10 @@ for tabname, subcolours in COLOURS:
         b = Button(f,
                    text=name,
                    style=name + ".TButton",
-                   command=lambda bg=bg, fg=fg: spawn_xterm(foreground=fg,
-                                                            background=bg,
-                                                            geometry=gy))
+                   command=lambda label=name, bg=bg, fg=fg: spawn_xterm(label=label,
+                                                                        foreground=fg,
+                                                                        background=bg,
+                                                                        geometry=gy))
         b.grid(row=row, column=column, sticky=(N,E,S,W))
 
         column += 1
