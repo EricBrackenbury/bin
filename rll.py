@@ -39,7 +39,6 @@ FGS        = ["none",
               "darkblue",
               "violet",
               "purple"]
-RLL_BG     = "aquamarine4"
 
 FONTS      = ["10x20"] # TODO
 
@@ -121,7 +120,6 @@ def spawn_xterm(label,
                                 "-n", label]).start()
 
 root = Tk()
-root["bg"] = RLL_BG
 
 for key in "<Control-c>", "<Control-d>", "q":
     root.bind(key, lambda e: root.destroy())
