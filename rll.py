@@ -121,7 +121,7 @@ def spawn_xterm(label,
 
 root = Tk()
 
-for key in "<Control-c>", "<Control-d>", "q":
+for key in "<Control-c>", "<Control-d>", "<Escape>", "q":
     root.bind(key, lambda e: root.destroy())
 for key in "<Control-z>", "i":
     root.bind(key, lambda e: root.iconify())
