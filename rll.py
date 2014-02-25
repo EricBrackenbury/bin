@@ -142,15 +142,6 @@ fg_field   = Combobox(root, textvariable=fg_text,   values=FGS)
 size_field = Combobox(root, textvariable=size_text, values=SIZES)
 host_field = Combobox(root, textvariable=host_text, values=HOSTNAMES)
 
-columns = 0
-for column, widget in enumerate([fg_button,   fg_field,
-                                 size_button, size_field,
-                                 host_button, host_field,
-                                 ssh_button,
-                                 exit_button]):
-    widget.grid(row=0, column=column, sticky=(N,E,S,W))
-    columns += 1
-
 # Create the tab set, and the frames for each tab
 tabs = Notebook(root)
 for tabname, subcolours in COLOURS:
@@ -183,6 +174,14 @@ for tabname, subcolours in COLOURS:
 
     tabs.add(f, text=tabname)
 
-tabs.grid(row=1, column=0, columnspan=columns, sticky=(N,E,S,W))
+for row, widgets in enumerate([(fg_button,   fg_field),
+                               (size_button, size_field),
+                               (exit_button,),
+                               (tabs,)]):
+    for column, widget in enumerate(widgets):
+        widget.grid(row=row,
+                    column=column,
+                    sticky=(N,E,S,W),
+                    columnspan={1:2, 2:1}[len(widgets)])
 
 root.mainloop()
