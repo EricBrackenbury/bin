@@ -163,68 +163,69 @@ def spawn_xterm(label,
                                 "-fn", font,
                                 "-n", label]).start()
 
-root = Tk()
+if __name__ == "__main__":
+    root = Tk()
 
-for key in "<Control-c>", "<Control-d>", "<Escape>", "q":
-    root.bind(key, lambda e: root.destroy())
-for key in "<Control-z>", "i":
-    root.bind(key, lambda e: root.iconify())
-root.bind("<Alt-r>", lambda e: execl("/proc/self/exe", argv[0], *argv))
+    for key in "<Control-c>", "<Control-d>", "<Escape>", "q":
+        root.bind(key, lambda e: root.destroy())
+    for key in "<Control-z>", "i":
+        root.bind(key, lambda e: root.iconify())
+    root.bind("<Alt-r>", lambda e: execl("/proc/self/exe", argv[0], *argv))
 
-# Create the various buttons and fields at the top
-# TODO: What does this do, since we can just read the value of fg_text directly?
-fg_button   = Button(root, text="fg")
-size_button = Button(root, text="size")
-host_button = Button(root, text="remote host")
-ssh_button  = Button(root, text="ssh")
-exit_button = Button(root, text="exit", command=root.destroy)
+    # Create the various buttons and fields at the top
+    # TODO: What does this do, since we can just read the value of fg_text directly?
+    fg_button   = Button(root, text="fg")
+    size_button = Button(root, text="size")
+    host_button = Button(root, text="remote host")
+    ssh_button  = Button(root, text="ssh")
+    exit_button = Button(root, text="exit", command=root.destroy)
 
-fg_text, size_text, host_text = StringVar(), StringVar(), StringVar()
-fg_field   = Combobox(root, textvariable=fg_text,   values=FGS)
-size_field = Combobox(root, textvariable=size_text, values=SIZES)
-host_field = Combobox(root, textvariable=host_text, values=HOSTNAMES)
+    fg_text, size_text, host_text = StringVar(), StringVar(), StringVar()
+    fg_field   = Combobox(root, textvariable=fg_text,   values=FGS)
+    size_field = Combobox(root, textvariable=size_text, values=SIZES)
+    host_field = Combobox(root, textvariable=host_text, values=HOSTNAMES)
 
-# Create the tab set, and the frames for each tab
-tabs = Notebook(root)
-for tabname, subcolours in COLOURS:
-    f = Frame(tabs)
-    column = 0
-    row = 0
-    for options in subcolours:
-        name = options["name"]
-        fg = fg_text.get() if fg_text.get() else options.get("fg", DEFAULT_FOREGROUND)
-        bg = options.get("bg", DEFAULT_BACKGROUND)
-        gy = size_text.get() if size_text.get() else DEFAULT_GEOMETRY
-        # Create new derived style for button, with only overriden background
-        # colour.
-        s = Style()
-        s.configure(name + ".TButton", background=bg, foreground=fg)
+    # Create the tab set, and the frames for each tab
+    tabs = Notebook(root)
+    for tabname, subcolours in COLOURS:
+        f = Frame(tabs)
+        column = 0
+        row = 0
+        for options in subcolours:
+            name = options["name"]
+            fg = fg_text.get() if fg_text.get() else options.get("fg", DEFAULT_FOREGROUND)
+            bg = options.get("bg", DEFAULT_BACKGROUND)
+            gy = size_text.get() if size_text.get() else DEFAULT_GEOMETRY
+            # Create new derived style for button, with only overriden background
+            # colour.
+            s = Style()
+            s.configure(name + ".TButton", background=bg, foreground=fg)
 
-        b = Button(f,
-                   text=name,
-                   style=name + ".TButton",
-                   command=lambda label=name, bg=bg, fg=fg: spawn_xterm(label=label,
-                                                                        foreground=fg,
-                                                                        background=bg,
-                                                                        geometry=gy))
-        b.grid(row=row, column=column, sticky=(N,E,S,W))
+            b = Button(f,
+                       text=name,
+                       style=name + ".TButton",
+                       command=lambda label=name, bg=bg, fg=fg: spawn_xterm(label=label,
+                                                                            foreground=fg,
+                                                                            background=bg,
+                                                                            geometry=gy))
+            b.grid(row=row, column=column, sticky=(N,E,S,W))
 
-        column += 1
-        if column == 3: # 3x… grid
-            column = 0
-            row += 1
+            column += 1
+            if column == 3: # 3x… grid
+                column = 0
+                row += 1
 
-    tabs.add(f, text=tabname)
+        tabs.add(f, text=tabname)
 
-for row, widgets in enumerate([[(fg_button,   (E,)), (fg_field, (W,E))],
-                               [(size_button, (E,)), (size_field, (W,E))],
-                               [(exit_button, (E,))],
-                               [(tabs,        (W,E))]]):
-    for column, (widget, sticky) in enumerate(widgets):
-        widget.grid(row=row,
-                    column=column,
-                    sticky=sticky + (N,S),
-                    columnspan={1:2, 2:1}[len(widgets)])
-exit_button.grid(row=2, column=0, columnspan=2, sticky=(N,E,S))
+    for row, widgets in enumerate([[(fg_button,   (E,)), (fg_field, (W,E))],
+                                   [(size_button, (E,)), (size_field, (W,E))],
+                                   [(exit_button, (E,))],
+                                   [(tabs,        (W,E))]]):
+        for column, (widget, sticky) in enumerate(widgets):
+            widget.grid(row=row,
+                        column=column,
+                        sticky=sticky + (N,S),
+                        columnspan={1:2, 2:1}[len(widgets)])
+    exit_button.grid(row=2, column=0, columnspan=2, sticky=(N,E,S))
 
-root.mainloop()
+    root.mainloop()
