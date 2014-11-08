@@ -141,7 +141,8 @@ def spawn_st(label,
              background=DEFAULT_BACKGROUND,
              geometry=DEFAULT_GEOMETRY,
              font=DEFAULT_FONT,
-             wm_class=DEFAULT_CLASS):
+             wm_class=DEFAULT_CLASS,
+             command=None):
     # TODO: wm_class, wm_instance
     Process(target=execlp, args=["st",
                                  "st",
@@ -149,13 +150,16 @@ def spawn_st(label,
                                  "-C", "bg:" + background,
                                  "-g", geometry,
                                  "-f", font,
-                                 "-t", label]).start()
+                                 "-t", label] +
+                                 ((["-e"] + command) if command is not None else [])).start()
+
 
 def spawn_xterm(label,
                 foreground=DEFAULT_FOREGROUND,
                 background=DEFAULT_BACKGROUND,
                 geometry=DEFAULT_GEOMETRY,
-                font=DEFAULT_FONT):
+                font=DEFAULT_FONT,
+                command=None):
     # TODO: -n
     Process(target=execlp, args=["xterm",
                                  "xterm",
@@ -166,7 +170,8 @@ def spawn_xterm(label,
                                  "-bg", background,
                                  "-geometry", geometry,
                                  "-fn", font,
-                                 "-n", label]).start()
+                                 "-n", label] +
+                                 ((["-e"] + command) if command is not None else [])).start()
 
 
 def spawn_term(term, *args, **kwargs):
@@ -189,15 +194,20 @@ if __name__ == "__main__":
     size_label = Label(root, text="size: ")
     term_label = Label(root, text="term: ")
     # FIXME: size and host buttons not displayed nor used
-    ssh_button  = Button(root, text="ssh")
+    ssh_bool    = BooleanVar()
+    ssh_button  = Checkbutton(root, text="ssh: ",
+                              style="Toolbutton",
+                              variable=ssh_bool)
     exit_button = Button(root, text="exit", command=root.destroy)
 
     fg_text = StringVar()
     size_text = StringVar()
     term_text = StringVar()
+    ssh_text  = StringVar()
     fg_field   = Combobox(root, textvariable=fg_text,   values=FGS)
     size_field = Combobox(root, textvariable=size_text, values=SIZES)
     term_field = Combobox(root, textvariable=term_text, values=TERMINALS)
+    ssh_field  = Combobox(root, textvariable=ssh_text,  values=HOSTNAMES)
 
     # Create the tab set, and the frames for each tab
     tabs = Notebook(root)
@@ -213,6 +223,8 @@ if __name__ == "__main__":
             bg = lambda os=options: os.get("bg", DEFAULT_BACKGROUND)
             gy = lambda: size_text.get() if size_text.get() else DEFAULT_GEOMETRY
             te = lambda: term_text.get() if term_text.get() else DEFAULT_TERMINAL
+            # TODO: port specifiation
+            cl = lambda: ["ssh", ssh_text.get()] if ssh_bool.get() and ssh_text.get() else None
             # Create new derived style for button, with only overriden background
             # colour.
             s = Style()
@@ -221,12 +233,13 @@ if __name__ == "__main__":
             b = Button(f,
                        text=name,
                        style=name + ".TButton",
-                       command=lambda label=name, bg=bg, fg=fg, te=te: \
+                       command=lambda label=name, bg=bg, fg=fg, te=te, cl=cl: \
                                    spawn_term(te(),
                                               label=label,
                                               foreground=fg(),
                                               background=bg(),
-                                              geometry=gy()))
+                                              geometry=gy(),
+                                              command=cl()))
             b.grid(row=row, column=column, sticky=(N,E,S,W))
 
             column += 1
@@ -239,6 +252,7 @@ if __name__ == "__main__":
     for row, widgets in enumerate([[(fg_label,    (E,)), (fg_field,   (W,E))],
                                    [(size_label,  (E,)), (size_field, (W,E))],
                                    [(term_label,  (E,)), (term_field, (W,E))],
+                                   [(ssh_button,  (E,)), (ssh_field, (W,E))],
                                    [(exit_button, (N,E,S,))],
                                    [(tabs,        (W,E))]]):
         for column, (widget, sticky) in enumerate(widgets):
