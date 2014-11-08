@@ -168,6 +168,12 @@ def spawn_xterm(label,
                                  "-fn", font,
                                  "-n", label]).start()
 
+
+def spawn_term(term, *args, **kwargs):
+    {"st": spawn_st,
+     "xterm": spawn_xterm}[term](*args, **kwargs)
+
+
 if __name__ == "__main__":
     root = Tk()
 
@@ -204,21 +210,26 @@ if __name__ == "__main__":
         row = 0
         for options in subcolours:
             name = options["name"]
-            fg = fg_text.get() if fg_text.get() else options.get("fg", DEFAULT_FOREGROUND)
-            bg = options.get("bg", DEFAULT_BACKGROUND)
-            gy = size_text.get() if size_text.get() else DEFAULT_GEOMETRY
+            # Using closures to keep a reference to this environment when
+            # calling later.
+            fg = lambda os=options: fg_text.get() if fg_text.get() else os.get("fg", DEFAULT_FOREGROUND)
+            bg = lambda os=options: os.get("bg", DEFAULT_BACKGROUND)
+            gy = lambda: size_text.get() if size_text.get() else DEFAULT_GEOMETRY
+            te = lambda: term_text.get() if term_text.get() else DEFAULT_TERMINAL
             # Create new derived style for button, with only overriden background
             # colour.
             s = Style()
-            s.configure(name + ".TButton", background=bg, foreground=fg)
+            s.configure(name + ".TButton", background=bg(), foreground=fg())
 
             b = Button(f,
                        text=name,
                        style=name + ".TButton",
-                       command=lambda label=name, bg=bg, fg=fg: spawn_xterm(label=label,
-                                                                            foreground=fg,
-                                                                            background=bg,
-                                                                            geometry=gy))
+                       command=lambda label=name, bg=bg, fg=fg, te=te: \
+                                   spawn_term(te(),
+                                              label=label,
+                                              foreground=fg(),
+                                              background=bg(),
+                                              geometry=gy()))
             b.grid(row=row, column=column, sticky=(N,E,S,W))
 
             column += 1
