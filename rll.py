@@ -4,7 +4,6 @@ from os import execl, execlp
 from sys import argv
 from tkinter import *
 from tkinter.ttk import *
-from collections import OrderedDict
 from multiprocessing import Process
 
 
