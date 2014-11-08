@@ -42,6 +42,8 @@ FONTS      = ["Terminess Powerline:pixelsize=26:antialias=false:hint=true",
               "Terminus",
               "10x20"]
 
+TERMINALS = ["st", "xterm"]
+
 COLOURS = [("red",
             [{"name": "t1_root"          , "bg": "pink",             "fg": "black"},
              {"name": "coral"            , "bg": "coral",            "fg": "black"},
@@ -130,6 +132,7 @@ COLOURS = [("red",
 DEFAULT_FOREGROUND = "black"
 DEFAULT_BACKGROUND = "sand"
 DEFAULT_FONT       = FONTS[0]
+DEFAULT_TERMINAL   = TERMINALS[0]
 DEFAULT_GEOMETRY   = "80x39"
 DEFAULT_CLASS      = None
 
@@ -178,14 +181,20 @@ if __name__ == "__main__":
     # TODO: What does this do, since we can just read the value of fg_text directly?
     fg_button   = Button(root, text="fg")
     size_button = Button(root, text="size")
+    term_button = Button(root, text="term")
+    # FIXME: size and host buttons not displayed nor used
     host_button = Button(root, text="remote host")
     ssh_button  = Button(root, text="ssh")
     exit_button = Button(root, text="exit", command=root.destroy)
 
-    fg_text, size_text, host_text = StringVar(), StringVar(), StringVar()
+    fg_text = StringVar()
+    size_text = StringVar()
+    host_text = StringVar()
+    term_text = StringVar()
     fg_field   = Combobox(root, textvariable=fg_text,   values=FGS)
     size_field = Combobox(root, textvariable=size_text, values=SIZES)
     host_field = Combobox(root, textvariable=host_text, values=HOSTNAMES)
+    term_field = Combobox(root, textvariable=term_text, values=TERMINALS)
 
     # Create the tab set, and the frames for each tab
     tabs = Notebook(root)
@@ -221,6 +230,7 @@ if __name__ == "__main__":
 
     for row, widgets in enumerate([[(fg_button,   (E,)), (fg_field, (W,E))],
                                    [(size_button, (E,)), (size_field, (W,E))],
+                                   [(term_button, (E,)), (term_field, (W,E))],
                                    [(exit_button, (E,))],
                                    [(tabs,        (W,E))]]):
         for column, (widget, sticky) in enumerate(widgets):
