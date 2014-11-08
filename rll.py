@@ -200,7 +200,7 @@ if __name__ == "__main__":
                               variable=ssh_bool)
     exit_button = Button(root, text="exit", command=root.destroy)
 
-    fg_text = StringVar()
+    fg_text   = StringVar()
     size_text = StringVar()
     term_text = StringVar()
     ssh_text  = StringVar()
