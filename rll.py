@@ -231,13 +231,12 @@ if __name__ == "__main__":
     for row, widgets in enumerate([[(fg_button,   (E,)), (fg_field, (W,E))],
                                    [(size_button, (E,)), (size_field, (W,E))],
                                    [(term_button, (E,)), (term_field, (W,E))],
-                                   [(exit_button, (E,))],
+                                   [(exit_button, (N,E,S,))],
                                    [(tabs,        (W,E))]]):
         for column, (widget, sticky) in enumerate(widgets):
             widget.grid(row=row,
                         column=column,
                         sticky=sticky + (N,S),
                         columnspan={1:2, 2:1}[len(widgets)])
-    exit_button.grid(row=2, column=0, columnspan=2, sticky=(N,E,S))
 
     root.mainloop()
