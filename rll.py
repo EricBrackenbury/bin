@@ -144,12 +144,12 @@ def spawn_st(label,
              wm_class=DEFAULT_CLASS):
     # TODO: wm_class, wm_instance
     Process(target=execlp, args=["st",
-                                "st",
-                                "-C", "fg:" + foreground,
-                                "-C", "bg:" + background,
-                                "-g", geometry,
-                                "-f", font,
-                                "-t", label]).start()
+                                 "st",
+                                 "-C", "fg:" + foreground,
+                                 "-C", "bg:" + background,
+                                 "-g", geometry,
+                                 "-f", font,
+                                 "-t", label]).start()
 
 def spawn_xterm(label,
                 foreground=DEFAULT_FOREGROUND,
@@ -158,15 +158,15 @@ def spawn_xterm(label,
                 font=DEFAULT_FONT):
     # TODO: -n
     Process(target=execlp, args=["xterm",
-                                "xterm",
-                                "-s",  # asynchronous scrolling
-                                "+sb", # no scrollbars
-                                "-ut", # don't write to UTMP
-                                "-fg", foreground,
-                                "-bg", background,
-                                "-geometry", geometry,
-                                "-fn", font,
-                                "-n", label]).start()
+                                 "xterm",
+                                 "-s",  # asynchronous scrolling
+                                 "+sb", # no scrollbars
+                                 "-ut", # don't write to UTMP
+                                 "-fg", foreground,
+                                 "-bg", background,
+                                 "-geometry", geometry,
+                                 "-fn", font,
+                                 "-n", label]).start()
 
 if __name__ == "__main__":
     root = Tk()
