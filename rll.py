@@ -179,9 +179,9 @@ if __name__ == "__main__":
 
     # Create the various buttons and fields at the top
     # TODO: What does this do, since we can just read the value of fg_text directly?
-    fg_button   = Button(root, text="fg")
-    size_button = Button(root, text="size")
-    term_button = Button(root, text="term")
+    fg_label   = Label(root, text="fg: ")
+    size_label = Label(root, text="size: ")
+    term_label = Label(root, text="term: ")
     # FIXME: size and host buttons not displayed nor used
     host_button = Button(root, text="remote host")
     ssh_button  = Button(root, text="ssh")
@@ -228,9 +228,9 @@ if __name__ == "__main__":
 
         tabs.add(f, text=tabname)
 
-    for row, widgets in enumerate([[(fg_button,   (E,)), (fg_field, (W,E))],
-                                   [(size_button, (E,)), (size_field, (W,E))],
-                                   [(term_button, (E,)), (term_field, (W,E))],
+    for row, widgets in enumerate([[(fg_label,    (E,)), (fg_field,   (W,E))],
+                                   [(size_label,  (E,)), (size_field, (W,E))],
+                                   [(term_label,  (E,)), (term_field, (W,E))],
                                    [(exit_button, (N,E,S,))],
                                    [(tabs,        (W,E))]]):
         for column, (widget, sticky) in enumerate(widgets):
