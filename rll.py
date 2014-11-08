@@ -129,6 +129,22 @@ DEFAULT_FOREGROUND = "black"
 DEFAULT_BACKGROUND = "sand"
 DEFAULT_FONT       = "10x20"
 DEFAULT_GEOMETRY   = "80x39"
+DEFAULT_CLASS      = None
+
+def spawn_st(label,
+             foreground=DEFAULT_FOREGROUND,
+             background=DEFAULT_BACKGROUND,
+             geometry=DEFAULT_GEOMETRY,
+             font=DEFAULT_FONT,
+             wm_class=DEFAULT_CLASS):
+    # TODO: wm_class, wm_instance
+    Process(target=execp, args=["st",
+                                "st",
+                                "-C", "fg:" + foreground,
+                                "-C", "bg:" + background,
+                                "-g", geometry,
+                                "-f", font,
+                                "-t", label]).start()
 
 def spawn_xterm(label,
                 foreground=DEFAULT_FOREGROUND,
