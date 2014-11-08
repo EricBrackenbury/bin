@@ -1,14 +1,12 @@
 #! /usr/bin/python3
 
+from os import execl, execp
+from sys import argv
 from tkinter import *
 from tkinter.ttk import *
-
-from sys import argv
-from os import execl
-
+from collections import OrderedDict
 from multiprocessing import Process
 
-from collections import OrderedDict
 
 HOSTNAMES = ["gold",
              "garnet",
