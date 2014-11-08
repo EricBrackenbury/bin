@@ -1,6 +1,6 @@
 #! /usr/bin/python3
 
-from os import execl, execp
+from os import execl, execlp
 from sys import argv
 from tkinter import *
 from tkinter.ttk import *
@@ -138,7 +138,7 @@ def spawn_st(label,
              font=DEFAULT_FONT,
              wm_class=DEFAULT_CLASS):
     # TODO: wm_class, wm_instance
-    Process(target=execp, args=["st",
+    Process(target=execlp, args=["st",
                                 "st",
                                 "-C", "fg:" + foreground,
                                 "-C", "bg:" + background,
@@ -152,7 +152,7 @@ def spawn_xterm(label,
                 geometry=DEFAULT_GEOMETRY,
                 font=DEFAULT_FONT):
     # TODO: -n
-    Process(target=execl, args=["/usr/bin/xterm",
+    Process(target=execlp, args=["xterm",
                                 "xterm",
                                 "-s",  # asynchronous scrolling
                                 "+sb", # no scrollbars
