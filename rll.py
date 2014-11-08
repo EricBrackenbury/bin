@@ -189,17 +189,14 @@ if __name__ == "__main__":
     size_label = Label(root, text="size: ")
     term_label = Label(root, text="term: ")
     # FIXME: size and host buttons not displayed nor used
-    host_button = Button(root, text="remote host")
     ssh_button  = Button(root, text="ssh")
     exit_button = Button(root, text="exit", command=root.destroy)
 
     fg_text = StringVar()
     size_text = StringVar()
-    host_text = StringVar()
     term_text = StringVar()
     fg_field   = Combobox(root, textvariable=fg_text,   values=FGS)
     size_field = Combobox(root, textvariable=size_text, values=SIZES)
-    host_field = Combobox(root, textvariable=host_text, values=HOSTNAMES)
     term_field = Combobox(root, textvariable=term_text, values=TERMINALS)
 
     # Create the tab set, and the frames for each tab
