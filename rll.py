@@ -37,7 +37,10 @@ FGS        = ["none",
               "violet",
               "purple"]
 
-FONTS      = ["10x20"] # TODO
+# TODO
+FONTS      = ["Terminess Powerline:pixelsize=26:antialias=false:hint=true",
+              "Terminus",
+              "10x20"]
 
 COLOURS = [("red",
             [{"name": "t1_root"          , "bg": "pink",             "fg": "black"},
