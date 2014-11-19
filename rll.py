@@ -2,9 +2,10 @@
 
 from os import execl, execlp
 from sys import argv
-from tkinter import *
-from tkinter.ttk import *
 from multiprocessing import Process
+
+import tkinter as tk
+from tkinter import ttk
 
 
 HOSTNAMES = ["gold",
@@ -179,8 +180,89 @@ def spawn_term(term, *args, **kwargs):
      "xterm": spawn_xterm}[term](*args, **kwargs)
 
 
+class TkRll(ttk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent)
+
+        # Create the various buttons and fields at the top
+        fg_label   = ttk.Label(self, text="fg: ")
+        size_label = ttk.Label(self, text="size: ")
+        term_label = ttk.Label(self, text="term: ")
+        ssh_bool    = tk.BooleanVar()
+        ssh_button  = ttk.Checkbutton(self, text="ssh: ",
+                                      style="Toolbutton",
+                                      variable=ssh_bool)
+        # FIXME: Figure out cleanest way of exiting.
+        exit_button = ttk.Button(self, text="exit", command=self.destroy)
+
+        fg_text   = tk.StringVar()
+        size_text = tk.StringVar()
+        term_text = tk.StringVar()
+        ssh_text  = tk.StringVar()
+        fg_field   = ttk.Combobox(self, textvariable=fg_text,   values=FGS)
+        size_field = ttk.Combobox(self, textvariable=size_text, values=SIZES)
+        term_field = ttk.Combobox(self, textvariable=term_text, values=TERMINALS)
+        ssh_field  = ttk.Combobox(self, textvariable=ssh_text,  values=HOSTNAMES)
+
+        # Create the tab set, and the frames for each tab
+        tabs = ttk.Notebook(self)
+        for tabname, subcolours in COLOURS:
+            f = ttk.Frame(tabs)
+            column = 0
+            row = 0
+            for options in subcolours:
+                name = options["name"]
+                # Using closures to keep a reference to this environment when
+                # calling later.
+                fg = lambda os=options: fg_text.get() if fg_text.get() else os.get("fg", DEFAULT_FOREGROUND)
+                bg = lambda os=options: os.get("bg", DEFAULT_BACKGROUND)
+                gy = lambda: size_text.get() if size_text.get() else DEFAULT_GEOMETRY
+                te = lambda: term_text.get() if term_text.get() else DEFAULT_TERMINAL
+                # TODO: port specifiation
+                cl = lambda: ["ssh", ssh_text.get()] if ssh_bool.get() and ssh_text.get() else None
+                # Create new derived style for button, with only overriden background
+                # colour.
+                s = ttk.Style()
+                s.configure(name + ".TButton", background=bg(), foreground=fg())
+
+                b = ttk.Button(f,
+                           text=name,
+                           style=name + ".TButton",
+                           command=lambda label=name, bg=bg, fg=fg, te=te, cl=cl: \
+                                       spawn_term(te(),
+                                                  label=label,
+                                                  foreground=fg(),
+                                                  background=bg(),
+                                                  geometry=gy(),
+                                                  command=cl()))
+                b.grid(row=row, column=column, sticky=(tk.N, tk.E, tk.S, tk.W))
+
+                column += 1
+                if column == 3: # 3x… grid
+                    column = 0
+                    row += 1
+
+            tabs.add(f, text=tabname)
+
+        for row, widgets in enumerate([[(fg_label,    (tk.E,)),
+                                        (fg_field,    (tk.W, tk.E))],
+                                       [(size_label,  (tk.E,)),
+                                        (size_field,  (tk.W, tk.E))],
+                                       [(term_label,  (tk.E,)),
+                                        (term_field,  (tk.W, tk.E))],
+                                       [(ssh_button,  (tk.E,)),
+                                        (ssh_field,   (tk.W, tk.E))],
+                                       [(exit_button, (tk.N, tk.E, tk.S))],
+                                       [(tabs,        (tk.W, tk.E))]]):
+            for column, (widget, sticky) in enumerate(widgets):
+                widget.grid(row=row,
+                            column=column,
+                            sticky=sticky + (tk.N, tk.S),
+                            columnspan={1:2, 2:1}[len(widgets)])
+
+
 if __name__ == "__main__":
-    root = Tk()
+    root = tk.Tk()
 
     for key in "<Control-c>", "<Control-d>", "<Escape>", "q":
         root.bind(key, lambda e: root.destroy())
@@ -188,77 +270,6 @@ if __name__ == "__main__":
         root.bind(key, lambda e: root.iconify())
     root.bind("<Alt-r>", lambda e: execl("/proc/self/exe", argv[0], *argv))
 
-    # Create the various buttons and fields at the top
-    # TODO: What does this do, since we can just read the value of fg_text directly?
-    fg_label   = Label(root, text="fg: ")
-    size_label = Label(root, text="size: ")
-    term_label = Label(root, text="term: ")
-    # FIXME: size and host buttons not displayed nor used
-    ssh_bool    = BooleanVar()
-    ssh_button  = Checkbutton(root, text="ssh: ",
-                              style="Toolbutton",
-                              variable=ssh_bool)
-    exit_button = Button(root, text="exit", command=root.destroy)
-
-    fg_text   = StringVar()
-    size_text = StringVar()
-    term_text = StringVar()
-    ssh_text  = StringVar()
-    fg_field   = Combobox(root, textvariable=fg_text,   values=FGS)
-    size_field = Combobox(root, textvariable=size_text, values=SIZES)
-    term_field = Combobox(root, textvariable=term_text, values=TERMINALS)
-    ssh_field  = Combobox(root, textvariable=ssh_text,  values=HOSTNAMES)
-
-    # Create the tab set, and the frames for each tab
-    tabs = Notebook(root)
-    for tabname, subcolours in COLOURS:
-        f = Frame(tabs)
-        column = 0
-        row = 0
-        for options in subcolours:
-            name = options["name"]
-            # Using closures to keep a reference to this environment when
-            # calling later.
-            fg = lambda os=options: fg_text.get() if fg_text.get() else os.get("fg", DEFAULT_FOREGROUND)
-            bg = lambda os=options: os.get("bg", DEFAULT_BACKGROUND)
-            gy = lambda: size_text.get() if size_text.get() else DEFAULT_GEOMETRY
-            te = lambda: term_text.get() if term_text.get() else DEFAULT_TERMINAL
-            # TODO: port specifiation
-            cl = lambda: ["ssh", ssh_text.get()] if ssh_bool.get() and ssh_text.get() else None
-            # Create new derived style for button, with only overriden background
-            # colour.
-            s = Style()
-            s.configure(name + ".TButton", background=bg(), foreground=fg())
-
-            b = Button(f,
-                       text=name,
-                       style=name + ".TButton",
-                       command=lambda label=name, bg=bg, fg=fg, te=te, cl=cl: \
-                                   spawn_term(te(),
-                                              label=label,
-                                              foreground=fg(),
-                                              background=bg(),
-                                              geometry=gy(),
-                                              command=cl()))
-            b.grid(row=row, column=column, sticky=(N,E,S,W))
-
-            column += 1
-            if column == 3: # 3x… grid
-                column = 0
-                row += 1
-
-        tabs.add(f, text=tabname)
-
-    for row, widgets in enumerate([[(fg_label,    (E,)), (fg_field,   (W,E))],
-                                   [(size_label,  (E,)), (size_field, (W,E))],
-                                   [(term_label,  (E,)), (term_field, (W,E))],
-                                   [(ssh_button,  (E,)), (ssh_field, (W,E))],
-                                   [(exit_button, (N,E,S,))],
-                                   [(tabs,        (W,E))]]):
-        for column, (widget, sticky) in enumerate(widgets):
-            widget.grid(row=row,
-                        column=column,
-                        sticky=sticky + (N,S),
-                        columnspan={1:2, 2:1}[len(widgets)])
+    TkRll(root).pack()
 
     root.mainloop()
