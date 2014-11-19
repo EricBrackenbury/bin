@@ -452,17 +452,17 @@ else:
 
 
 if __name__ == "__main__":
-    usage = "usage: [--gtk|--tk]"
-    gui = tk_main
-    if len(argv) > 2:
-        exit(usage)
-    elif len(argv) == 2:
-        if argv[1] == "--gtk":
-            gui = _gtk_main
-        elif argv[1] == "--tk":
-            gui = tk_main
+    from argparse import ArgumentParser
+    parser = ArgumentParser(description="Roland's <TODO> <TODO>")
+    toolkit = parser.add_mutually_exclusive_group()
+    toolkit.add_argument("--tk", action='store_const', const=_tk_main,
+                         dest="toolkit",
+                         default=_tk_main)
+    toolkit.add_argument("--gtk", action='store_const', const=_gtk_main,
+                         dest="toolkit")
+    args = parser.parse_args()
 
-    if gui is None:
+    if args.toolkit is None:
         error("specified widget toolkit not available")
     else:
-        gui()
+        args.toolkit()
