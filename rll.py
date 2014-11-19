@@ -260,6 +260,19 @@ class TkRll(ttk.Frame):
                             sticky=sticky + (tk.N, tk.S),
                             columnspan={1:2, 2:1}[len(widgets)])
 
+def _tk_main():
+    root = tk.Tk()
+
+    for key in "<Control-c>", "<Control-d>", "<Escape>", "q":
+        root.bind(key, lambda e: root.destroy())
+    for key in "<Control-z>", "i":
+        root.bind(key, lambda e: root.iconify())
+    root.bind("<Alt-r>", lambda e: execl("/proc/self/exe", argv[0], *argv))
+
+    TkRll(root).pack()
+
+    root.mainloop()
+
 
 try:
     from gi.repository import Gtk, Gdk
@@ -439,14 +452,17 @@ else:
 
 
 if __name__ == "__main__":
-    root = tk.Tk()
+    usage = "usage: [--gtk|--tk]"
+    gui = tk_main
+    if len(argv) > 2:
+        exit(usage)
+    elif len(argv) == 2:
+        if argv[1] == "--gtk":
+            gui = _gtk_main
+        elif argv[1] == "--tk":
+            gui = tk_main
 
-    for key in "<Control-c>", "<Control-d>", "<Escape>", "q":
-        root.bind(key, lambda e: root.destroy())
-    for key in "<Control-z>", "i":
-        root.bind(key, lambda e: root.iconify())
-    root.bind("<Alt-r>", lambda e: execl("/proc/self/exe", argv[0], *argv))
-
-    TkRll(root).pack()
-
-    root.mainloop()
+    if gui is None:
+        error("specified widget toolkit not available")
+    else:
+        gui()
