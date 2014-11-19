@@ -261,6 +261,183 @@ class TkRll(ttk.Frame):
                             columnspan={1:2, 2:1}[len(widgets)])
 
 
+try:
+    from gi.repository import Gtk, Gdk
+except ImportError:
+    _gtk_main = None
+else:
+    # TODO: set_urgency, set_wm_class, set_default
+    # http://lazka.github.io/pgi-docs/Gtk-3.0/classes/
+    # https://developer.gnome.org/gtk3/stable/ch03.html
+    # http://python-gtk-3-tutorial.readthedocs.org/en/latest/index.html
+    class GtkRll(Gtk.Window):
+        def __init__(self):
+            super().__init__(title="Gtk rll")
+
+            ctrl = Gdk.ModifierType.CONTROL_MASK
+            alt = Gdk.ModifierType.MOD1_MASK
+            self._bindings = [({(ctrl, Gdk.KEY_c),
+                                (ctrl, Gdk.KEY_d),
+                                (None, Gdk.KEY_Escape),
+                                (None, Gdk.KEY_q)},
+                               self.destroy),
+                              ({(ctrl, Gdk.KEY_z),
+                                (None, Gdk.KEY_i)},
+                               self.iconify),
+                              ({(alt, Gdk.KEY_r)},
+                                  lambda: execl("/proc/self/exe",
+                                                argv[0], *argv))]
+            self.connect("key-release-event", self._key_pressed)
+
+            box = Gtk.VBox()
+
+            def choose(title, combobox):
+                def callback(widget):
+                    dialog = Gtk.ColorSelectionDialog(title=title)
+                    dialog.set_transient_for(self)
+                    selection = dialog.get_color_selection()
+                    rgba = Gdk.RGBA()
+                    if rgba.parse(combobox.get_active_text()):
+                        selection.set_current_rgba(rgba)
+                    if dialog.run():
+                        rgba = selection.get_current_rgba()
+                        fmt = "#{:02x}{:02x}{:02x}".format(int(rgba.red * 255),
+                                                           int(rgba.green * 255),
+                                                           int(rgba.blue * 255))
+                        combobox.get_child().set_text(fmt)
+                    dialog.destroy()
+                return callback
+
+            self._foreground = Gtk.ComboBoxText(hexpand=True, has_entry=True)
+            self._foreground.set_tooltip_text("Choose terminal foreground text")
+            for fg in FGS:
+                self._foreground.append_text(fg)
+            fgchooser = Gtk.Button(label="Foreground: ")
+            fgchooser.set_tooltip_text("Choose terminal foreground text")
+            fgchooser.connect("clicked", choose("Foreground", self._foreground))
+
+            self._background = Gtk.ComboBoxText(hexpand=True, has_entry=True)
+            self._background.set_tooltip_text("Choose terminal background text")
+            for bg in FGS:
+                self._background.append_text(bg)
+            bgchooser = Gtk.Button(label="Background:" )
+            bgchooser.set_tooltip_text("Choose terminal background text")
+            bgchooser.connect("clicked", choose("Background", self._background))
+
+            self._size = Gtk.ComboBoxText(hexpand=True, has_entry=True)
+            self._size.set_tooltip_text("Choose terminal size")
+            for size in SIZES:
+                self._size.append_text(size)
+
+            self._term = Gtk.ComboBoxText(hexpand=True, has_entry=True)
+            self._term.set_tooltip_text("Choose terminal to spawn")
+            for terminal in TERMINALS:
+                self._term.append_text(terminal)
+
+            self._ssh = Gtk.ComboBoxText(hexpand=True, has_entry=True)
+            self._ssh.set_tooltip_text("Choose SSH host (one word) or command "
+                                       "line to run")
+            for hostname in HOSTNAMES:
+                self._ssh.append_text(hostname)
+
+            grid = Gtk.Grid(valign=Gtk.Align.START, vexpand=False)
+            for rowno, row in enumerate([(fgchooser, self._foreground),
+                                         (bgchooser, self._background),
+                                         (Gtk.Label(label="Size: ",
+                                                    halign=Gtk.Align.START),
+                                          self._size),
+                                         (Gtk.Label(label="Terminal: ",
+                                                    halign=Gtk.Align.START),
+                                          self._term),
+                                         (Gtk.Label(label="SSH: ",
+                                                    halign=Gtk.Align.START),
+                                          self._ssh)]):
+                for colno, col in enumerate(row):
+                    grid.attach(col, left=colno, top=rowno, width=1, height=1)
+            box.add(grid)
+
+            notebook = Gtk.Notebook(valign=Gtk.Align.START)
+            for tabname, colours in COLOURS:
+                #scrolled = Gtk.ScrolledWindow()
+                #scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+                # TODO: Make all button vertical sizes the same across flowboxes
+                flowbox = Gtk.FlowBox(vexpand=False)
+                flowbox.set_selection_mode(Gtk.SelectionMode.NONE)
+                for colour in colours:
+                    # TODO: set button colour
+                    fc = Gdk.RGBA()
+                    bc = Gdk.RGBA()
+                    if not fc.parse(colour["fg"]) or not bc.parse(colour["bg"]):
+                        continue
+                    def clicked(colour):
+                        def callback(widget):
+                            fg = self._foreground.get_active_text() or colour["fg"]
+                            bg = self._background.get_active_text() or colour["bg"]
+                            te = self._term.get_active_text() or DEFAULT_TERMINAL
+                            gy = self._size.get_active_text() or DEFAULT_GEOMETRY
+                            ssh = self._ssh.get_active_text().split()
+                            if len(ssh) > 1:
+                                cl = ssh
+                            elif len(ssh) == 1:
+                                cl = ["ssh", self._ssh.get_active_text()]
+                            else:
+                                cl = None
+                            spawn_term(te,
+                                       label=colour["name"],
+                                       foreground=fg,
+                                       background=bg,
+                                       geometry=gy,
+                                       command=cl)
+                        return callback
+
+                    button = Gtk.Button(label=colour["name"],
+                                        vexpand=False)
+                    button.set_tooltip_text(' '.join(["Spawn a",
+                                                      colour["name"],
+                                                      "terminal"]))
+                    button.override_background_color(Gtk.StateFlags.NORMAL, bc)
+                    button.override_color(Gtk.StateFlags.NORMAL, fc)
+                    button.override_color(Gtk.StateFlags.PRELIGHT, bc)
+                    # FIXME: Mouse over (PRELIGHT) background colour doesn't
+                    #        take effect.
+                    #button.override_background_color(Gtk.StateFlags.PRELIGHT, Gdk.RGBA(1, 0, 0, 1))
+                    #button.connect("enter", lambda widget: print(widget.get_style_context().get_background_color(Gtk.StateFlags.PRELIGHT)))
+                    button.set_relief(Gtk.ReliefStyle.NONE)
+                    button.connect("clicked", clicked(colour))
+                    flowbox.add(button)
+
+                #scrolled.add(flowbox)
+                notebook.append_page(flowbox, Gtk.Label(tabname))
+            box.add(notebook)
+
+            exit = Gtk.Button(label="Exit", expand=False,
+                              halign=Gtk.Align.END, valign=Gtk.Align.END)
+            exit.connect("clicked", lambda widget: self.destroy())
+            box.add(exit)
+
+            self.add(box)
+
+
+        def _key_pressed(self, widget, event):
+            if event.type == Gdk.EventType.KEY_RELEASE:
+                for keys, callback in self._bindings:
+                    for mask, key in keys:
+                        if event.keyval == key:
+                            if mask is not None:
+                                if event.state & mask:
+                                    callback()
+                            else:
+                                callback()
+
+
+    def _gtk_main():
+        gui = GtkRll()
+        gui.connect("delete-event", Gtk.main_quit)
+        gui.show_all()
+        # FIXME: KeyboardInterrupt here hangs it.
+        Gtk.main()
+
+
 if __name__ == "__main__":
     root = tk.Tk()
 
