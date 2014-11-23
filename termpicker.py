@@ -455,7 +455,7 @@ else:
 
 if __name__ == "__main__":
     from argparse import ArgumentParser
-    parser = ArgumentParser(description="Roland's <TODO> <TODO>")
+    parser = ArgumentParser(description="Term picker")
     toolkit = parser.add_mutually_exclusive_group()
     toolkit.add_argument("--tk", action='store_const', const=_tk_main,
                          dest="toolkit",
