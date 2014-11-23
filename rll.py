@@ -2,6 +2,7 @@
 
 from os import execl, execlp
 from sys import argv
+from signal import signal, SIGINT, SIG_DFL
 from multiprocessing import Process
 
 import tkinter as tk
@@ -446,6 +447,7 @@ else:
     def _gtk_main():
         gui = GtkRll()
         gui.connect("delete-event", Gtk.main_quit)
+        signal(SIGINT, SIG_DFL)
         gui.show_all()
         # FIXME: KeyboardInterrupt here hangs it.
         Gtk.main()
